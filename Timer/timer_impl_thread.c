@@ -7,10 +7,38 @@
 #include <semaphore.h>
 
 unsigned count;
+
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
+
+
 void thread_timer(union sigval val)
 {
-	printf("Passing time ...%d\n",count++);
+	if(count < 10)
+		printf("Passing time ...%d\n",count++);
+	else 
+	{
+		if( pthread_mutex_lock(&mutex) == -1 )
+		{
+			printf("Error while acquiring lock!! at %s\n",__func__);
+			perror("mutex_lock");
+			exit(EXIT_FAILURE);
+		}
+		if( pthread_cond_signal(&cond) == -1 )
+		{
+			printf("Error while Signaling %s\n",__func__);
+			perror("cond_signal");
+			exit(EXIT_FAILURE);
+		}
+		if( pthread_mutex_unlock(&mutex) == -1 )
+		{
+			printf("Error while unlocking mutex %s\n",__func__);
+			perror("mutex_unlock");
+			exit(EXIT_FAILURE);
+		}	
+	}
 }
+
 int main(void)
 {
 	timer_t timer_id;
@@ -33,15 +61,34 @@ int main(void)
 	{
 		printf("Error while Creating timer!! at %s\n",__func__);
 		perror("timer_create");
-		exit(-1);
+		exit(EXIT_FAILURE);
 	}
 	if( timer_settime(timer_id, 0/*No flags*/, &tspec, NULL) == -1 )
 	{
 		printf("Error while Setting time!! at %s\n",__func__);
 		perror("timer_settime");
-		exit(-1);
+		exit(EXIT_FAILURE);
 	}
-	while(1); /*Holt program to see timer in action {temoerary}*/
+	if( pthread_mutex_lock(&mutex) == -1 )
+	{
+		printf("Error while acquiring mutex!! at %s\n",__func__);
+		perror("mutex_lock");
+		exit(EXIT_FAILURE);
+	}
+	if(pthread_cond_wait(&cond, &mutex) == -1)
+	{
+		printf("Error while waiting for signal !! at %s\n",__func__);
+		perror("cond_wait");
+		exit(EXIT_FAILURE);
+	}
+	if( pthread_mutex_unlock(&mutex) == -1 )
+	{
+		printf("Error while unlocking mutex!! at %s\n",__func__);
+		perror("mutex_unlock");
+		exit(EXIT_FAILURE);
+	}
+	
+	//while(1); /*Holt program to see timer in action {temoerary}*/
 	return 0;
 }
 
