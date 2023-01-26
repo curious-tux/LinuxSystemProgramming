@@ -1,3 +1,5 @@
 .ccls-cache/
 timer_impl_thread
 timer_impl_signal
+server
+client
