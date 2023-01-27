@@ -14,30 +14,30 @@ int main(void)
 {
 	mqd_t client,server;
 
-	struct mq_attr attr = 
-	{
-		.mq_curmsgs = 0,
-		.mq_flags = 0,
-		.mq_msgsize = 256,
-		.mq_maxmsg = 10
-	};
+	char clientName[256];
+	char serverMessage[] = "You have been served!!";
+	struct mq_attr attr;
 	
+	attr.mq_curmsgs = 0;
+	attr.mq_flags = 0;
+	attr.mq_msgsize = 256;
+	attr.mq_maxmsg = 10;
+	
+	printf("Starting server!!\n");
 	/*Create server*/
-	if( (server = mq_open(SERVER_NAME, O_CREAT|O_RDONLY,0660,&attr) == -1 ))
+	if( (server = mq_open(SERVER_NAME, O_RDONLY|O_CREAT,0660,&attr)) == -1)
 	{
 		perror("mq_open");
 		exit(EXIT_FAILURE);
 	}
-	char clientName[64];
-	char serverMessage[] = "You have been served!!";
 	while(1)
 	{
-		if( mq_receive(server, clientName, sizeof(clientName), NULL) == -1)
+		if( mq_receive(server, clientName, 256, NULL) == -1)
 		{
 			perror("mq_receive");
 			exit(EXIT_FAILURE);
 		}
-
+		printf("Hello to you %s\n",clientName);
 		if( (client = mq_open(clientName, O_WRONLY)) == -1 )
 		{
 			perror("mq_open");
